@@ -134,17 +134,17 @@ CUDA_VISIBLE_DEVICES=0 python3 molecule_optimization.py --task_id logp --max_n_o
 
 cd scripts/
 
-CUDA_VISIBLE_DEVICES=1 python3 molecule_optimization.py --task_id zale --max_string_length 400 --max_n_oracle_calls 120000 --bsz 10 - run_lolbo - done 
+CUDA_VISIBLE_DEVICES=0 python3 molecule_optimization.py --task_id zale --max_string_length 400 --max_n_oracle_calls 120000 --bsz 10 - run_lolbo - done 
 
 ## How to Run LOLBO on Other Tasks
 To run LOLBO on other tasks, you'll need to write two new classes: 
 
 1. Objective Class
 
-Create a new child class of LatentSpaceObjective (see lolbo/latentspaceobjective.py) which all outlined methods defined. 
+Create a new child class of LatentSpaceObjective (see lolbo/latent_space_objective.py) which all outlined methods defined. 
 
 See example objective class for molecule tasks: 
-lolbo/moleculeobjective.py 
+lolbo/molecule_objective.py 
 
 2. Top Level Optimization Class
 
