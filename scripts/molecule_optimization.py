@@ -2,7 +2,7 @@ import sys
 sys.path.append("../")
 import fire
 from scripts.optimize import Optimize
-from lolbo.moleculeobjective import MoleculeObjective
+from lolbo.molecule_objective import MoleculeObjective
 from lolbo.utils.mol_utils.load_data import load_molecule_train_data
 
 

@@ -9,7 +9,7 @@ RDLogger.DisableLog('rdApp.*')
 import os
 os.environ["WANDB_SILENT"] = "True"
 from lolbo.lolbo import LOLBOState
-from lolbo.latentspaceobjective import LatentSpaceObjective
+from lolbo.latent_space_objective import LatentSpaceObjective
 try:
     import wandb
     WANDB_IMPORTED_SUCCESSFULLY = True
