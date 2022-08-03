@@ -6,7 +6,7 @@ import selfies as sf
 from lolbo.utils.mol_utils.mol_utils import smiles_to_desired_scores
 from lolbo.utils.mol_utils.selfies_vae.model_positional_unbounded import SELFIESDataset, InfoTransformerVAE
 from lolbo.utils.mol_utils.selfies_vae.data import collate_fn
-from lolbo.latentspaceobjective import LatentSpaceObjective
+from lolbo.latent_space_objective import LatentSpaceObjective
 from lolbo.utils.mol_utils.mol_utils import GUACAMOL_TASK_NAMES
 
 # Install Molecules Dependencies: 
