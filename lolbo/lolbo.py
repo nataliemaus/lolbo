@@ -168,6 +168,7 @@ class LOLBOState:
 
     def update_models_e2e(self):
         '''Finetune VAE end to end with surrogate model'''
+        self.progress_fails_since_last_e2e = 0
         new_xs = self.train_x[-self.bsz:]
         new_ys = self.train_y[-self.bsz:].squeeze(-1).tolist()
         train_x = new_xs + self.top_k_xs

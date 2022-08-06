@@ -35,6 +35,7 @@ class Optimize(object):
         init_n_update_epochs: Number of epochs to train the surrogate model for on initial data before optimization begins
         num_update_epochs: Number of epochs to update the model(s) for on each optimization step
         e2e_freq: Number of optimization steps before we update the models end to end (end to end update frequency)
+        update_e2e: If True, we update the models end to end (we run LOLBO). If False, we never update end to end (we run TuRBO)
         reset_vae_at_tr_restart: If True, when we reset the trust region, also reset the vae to the initial weights (weights prior to any e2e updates)
         k: We keep track of and update end to end on the top k points found during optimization
         verbose: If True, we print out updates such as best score found, number of oracle calls made, etc. 
@@ -55,6 +56,7 @@ class Optimize(object):
         init_n_update_epochs: int=20,
         num_update_epochs: int=2,
         e2e_freq: int=10,
+        update_e2e: bool=True,
         reset_vae_at_tr_restart: bool=False,
         k: int=1_000,
         verbose: bool=True,
@@ -72,6 +74,7 @@ class Optimize(object):
         self.verbose = verbose
         self.num_initialization_points = num_initialization_points
         self.e2e_freq = e2e_freq
+        self.update_e2e = update_e2e
         self.reset_vae_at_tr_restart = reset_vae_at_tr_restart
         self.set_seed()
         if wandb_project_name: # if project name specified
@@ -177,10 +180,9 @@ class Optimize(object):
             self.log_data_to_wandb_on_each_loop()
             # update models end to end when we fail to make
             #   progress e2e_freq times in a row (e2e_freq=10 by default)
-            if self.lolbo_state.progress_fails_since_last_e2e >= self.e2e_freq:
+            if (self.lolbo_state.progress_fails_since_last_e2e >= self.e2e_freq) and self.update_e2e:
                 self.lolbo_state.update_models_e2e()
                 self.lolbo_state.recenter()
-                self.lolbo_state.progress_fails_since_last_e2e = 0
             else: # otherwise, just update the surrogate model on data
                 self.lolbo_state.update_surrogate_model()
             # generate new candidate points, evaluate them, and update data
