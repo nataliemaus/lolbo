@@ -4,7 +4,6 @@ sys.path.append("../../")
 sys.path.append("../../../") 
 import os
 from math import log
-from math import pi as PI
 import pytorch_lightning as pl
 from pytorch_lightning.callbacks import ModelCheckpoint, RichProgressBar
 import torch
@@ -12,12 +11,7 @@ from torch import Tensor, nn
 from torch.nn import functional as F
 
 from lolbo.utils.mol_utils.selfies_vae.data import SELFIESDataModule, SELFIESDataset
-
-try:
-    from apex.optimizers import FusedAdam as Adam
-except:
-    print("Apex Adam not found, using torch")
-    from torch.optim import Adam
+from torch.optim import Adam
 
 BATCH_SIZE = 256
 ENCODER_LR = 1e-3
@@ -29,36 +23,8 @@ AGGRESSIVE_STEPS = 5
 # Disable verbose rdkit logs
 from rdkit import rdBase
 rdBase.DisableLog('rdApp.*')
-import selfies as sf
-# import moses
-
-def rbf_kernel(x, y, sigma=1.):
-    assert x.ndim == y.ndim == 2
-    assert x.shape[1] == y.shape[1]
-
-    nx, dim = x.shape
-    ny, dim = y.shape
-
-    x = x.unsqueeze(1).expand(nx, ny, dim)
-    y = y.unsqueeze(0).expand(nx, ny, dim)
-    return (-(x - y).pow(2) / (2 * sigma ** 2)).mean(dim=2).exp()
 
 def is_valid_molecule(x): return True 
-
-def polynomial_kernel(x, y, c=0., d=4.):
-    assert x.ndim == y.ndim == 2
-    assert x.shape[1] == y.shape[1]
-
-    nx, dim = x.shape
-    ny, dim = y.shape
-
-    x = x.unsqueeze(1).expand(nx, ny, dim)
-    y = y.unsqueeze(0).expand(nx, ny, dim)
-
-    return ((x * y).mean(dim=2) + c).pow(d)
-
-def gaussian_nll(x, mu, sigma):
-    return sigma.log() + 0.5 * (log(2 * PI) + ((x - mu) / sigma).pow(2))
 
 def gumbel_softmax(logits: Tensor, tau: float = 1, hard: bool = False, dim: int = -1,
                    return_randoms: bool = False, randoms: Tensor = None) -> Tensor:
@@ -109,11 +75,7 @@ class InfoTransformerVAE(pl.LightningModule):
         d_model: int = 128,
         is_autoencoder: bool = False,
         kl_factor: float = 0.1,
-        mmd_factor: float = 0.0,
-        cycle_factor: float = 0.0,
-        valid_factor: float = 0.0,
         min_posterior_std: float = 1e-4,
-        n_samples_mmd: int = 2,
         encoder_nhead: int = 8,
         encoder_dim_feedforward: int = 512,
         encoder_dropout: float = 0.1,
@@ -138,12 +100,8 @@ class InfoTransformerVAE(pl.LightningModule):
 
         # TODO
         self.kl_factor    = kl_factor
-        self.mmd_factor   = mmd_factor
-        self.cycle_factor = cycle_factor
-        self.valid_factor = valid_factor
 
         self.min_posterior_std = min_posterior_std
-        self.n_samples_mmd     = n_samples_mmd
         encoder_embedding_dim  = 2 * d_model
 
         self.encoder_token_embedding   = nn.Embedding(num_embeddings=self.vocab_size, embedding_dim=encoder_embedding_dim)
@@ -275,44 +233,6 @@ class InfoTransformerVAE(pl.LightningModule):
 
         return torch.tensor(v, dtype=torch.float, device=device) 
 
-    def consistency_losses(self, z: Tensor):
-        x_sample, logits = self.sample(z=z, differentiable=True, return_logits=True)
-        mu, sigma = self.encode(x_sample, as_probs=True)
-
-        tokens = x_sample.argmax(dim=-1)
-        f = self.is_valid(tokens)
-
-        n_valid = f.sum()
-        n_unique = len(set(tokens[f == 1.]))
-
-        return dict(
-            cycle_loss=(f * gaussian_nll(z, mu, sigma).mean(dim=(1, 2))).mean(),
-            valid_loss=((f - 0.5) * F.cross_entropy(logits.permute(0, 2, 1), tokens)).mean(),
-            frac_valid=f.mean(),
-            frac_valid_unique=n_unique / n_valid,
-            cycle_sigma_mean=sigma.mean(),
-        )
-
-    @staticmethod
-    def _flatten_z(z):
-        sh = z.shape
-        if len(sh) == 3:
-            return z.reshape(sh[0], sh[1] * sh[2])
-        elif len(sh) == 4:
-            return z.reshape(sh[0] * sh[1], sh[2] * sh[3])
-        else:
-            raise ValueError
-
-# data = (x,y)
-# tokens = tokenize(x)
-# mu, sigma = trf.encode(tokens)
-# z = trf.sample_posterior(mu, sigma)
-# logits = trf.decode(z, tokens)
-# y_hat = ppgpr(z)
-# ppgor_loss = -mll(y_hat, y)
-
-
-
     def forward(self, tokens):
         mu, sigma = self.encode(tokens)
 
@@ -331,48 +251,20 @@ class InfoTransformerVAE(pl.LightningModule):
         sigma2 = sigma.pow(2)
         kldiv = 0.5 * (mu.pow(2) + sigma2 - sigma2.log() - 1).mean()  # .sum(dim=(1, 2)).mean(0)
 
-        # kernel = lambda x, y: rbf_kernel(x, y) + polynomial_kernel(x, y) 
-        kernel = rbf_kernel
-
-
         primary_loss = recon_loss
         if self.kl_factor != 0:
             primary_loss = primary_loss + self.kl_factor * kldiv
-        mmd_loss = 0
-        if self.mmd_factor != 0:
-            z_p1 = self._flatten_z(self.sample_posterior(mu, sigma, self.n_samples_mmd))
-            z_p2 = self._flatten_z(self.sample_posterior(mu, sigma, self.n_samples_mmd))
-            z_q1 = self._flatten_z(self.sample_prior(mu.shape[0] * self.n_samples_mmd))
-            z_q2 = self._flatten_z(self.sample_prior(mu.shape[0] * self.n_samples_mmd))
-            mmd_loss = kernel(z_p1, z_p2).mean() + kernel(z_q1, z_q2).mean() - 0.5 * (
-                   kernel(z_p1, z_q1).mean() + kernel(z_p2, z_q1).mean() +
-                   kernel(z_p1, z_q2).mean() + kernel(z_p2, z_q2).mean())
-            primary_loss = primary_loss + self.mmd_factor * mmd_loss
         loss = primary_loss
-        if self.cycle_factor > 0 or self.valid_factor > 0: 
-            consistency_losses = self.consistency_losses(self.sample_prior(tokens.shape[0]))
-            if self.cycle_factor != 0:
-                loss = loss + self.cycle_factor * consistency_losses['cycle_loss'] 
-            if self.valid_factor != 0:
-                loss = loss + self.valid_factor * consistency_losses['valid_loss']
-        else:
-            consistency_losses = {}
 
         return dict(
             loss=loss, z=z,
             recon_loss=recon_loss,
             kldiv=kldiv,
-            mmd_loss=mmd_loss,
             recon_token_acc=(logits.argmax(dim=-1) == tokens).float().mean(),
             recon_string_acc=(logits.argmax(dim=-1) == tokens).all(dim=1).float().mean(dim=0),
             sigma_mean=sigma.mean(),
-            **consistency_losses
         )
 
-
-# To train successfully :
-# 1. remove z=z from return dict 
-# 2. add 
 
 class VAEModule(pl.LightningModule):
     def __init__(self,
@@ -381,11 +273,7 @@ class VAEModule(pl.LightningModule):
         d_model: int = 128,
         is_autoencoder: bool = False,
         kl_factor: float = 0.1,
-        mmd_factor: float = 0.0,
-        cycle_factor: float = 0.0,
-        valid_factor: float = 0.,
         min_posterior_std: float = 1e-4,
-        n_samples_mmd: int = 2,
         encoder_nhead: int = 8,
         encoder_dim_feedforward: int = 512,
         encoder_dropout: float = 0.1,
