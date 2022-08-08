@@ -1,5 +1,3 @@
-import sys
-sys.path.append("../")
 import math
 import torch
 from dataclasses import dataclass

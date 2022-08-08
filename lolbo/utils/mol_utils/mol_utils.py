@@ -1,7 +1,3 @@
-import sys
-sys.path.append("../")
-sys.path.append("../../")
-sys.path.append("../../../")
 import numpy as np
 import time
 import math
@@ -13,7 +9,7 @@ try: # for tdc docking
     from tdc import Oracle
 except: 
     print("Warning: Failed to import tdc docking environment")
-    print("If curently optimizing a tdc docking score, activatee compatibe environment (ie conda activate tdc)")
+    print("If currently optimizing a tdc docking score, activate compatible environment (ie conda activate tdc)")
 
 from rdkit import Chem
 from rdkit.Chem import Crippen
@@ -147,8 +143,8 @@ def setup_tdc_oracle(protien_name):
 
 def smile_to_tdc_docking_score(smiles_str, tdc_oracle, max_smile_len=600, timeout=600):
     # goal of function:
-    #          return docking score (score = tdc_oracle(smiles_str) ) iff it can be computed within timout seconds
-    #           otherwisse, return None
+    #          return docking score (score = tdc_oracle(smiles_str) ) iff it can be computed within timeout seconds
+    #           otherwise, return None
     if not smile_is_valid_mol(smiles_str):
         return None
     smiles_str = Chem.CanonSmiles(smiles_str)
@@ -171,7 +167,7 @@ def smile_to_tdc_docking_score(smiles_str, tdc_oracle, max_smile_len=600, timeou
         # print('TimeoutError encountered getting docking score for smiles_str:', smiles_str)
         ret_value = None
 
-    print(f"getting docking score: {ret_value} from protien took {time.time()-start} seconds")
+    print(f"getting docking score: {ret_value} from protein took {time.time()-start} seconds")
     return ret_value
 
 

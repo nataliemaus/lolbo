@@ -1,5 +1,3 @@
-import sys
-sys.path.append("../")
 import numpy as np
 import torch 
 import selfies as sf 
@@ -55,7 +53,7 @@ class MoleculeObjective(LatentSpaceObjective):
         '''Input
                 z: a tensor latent space points
             Output
-                a correspodinng list of the decoded input space 
+                a corresponding list of the decoded input space 
                 items output by vae decoder 
         '''
         if type(z) is np.ndarray: 
@@ -125,8 +123,8 @@ class MoleculeObjective(LatentSpaceObjective):
         X_list = []
         for smile in xs_batch:
             try:
-                ''' Since there arae multiple ways to represent a
-                    simle smiles string as a SELLFIE, sometimes 
+                ''' Since there are multiple ways to represent a
+                    smile smiles string as a SELFIE, sometimes 
                     sf.encoder gives a selfies strings with rare
                     tokens that can't be tokenized by the dataobj
                     since they weren't in the initial train set,

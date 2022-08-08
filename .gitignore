@@ -12,3 +12,5 @@ data/*
 mujoco_vids/
 mujoco_vids/*
 test_stuff.py
+
+lolbo.egg-info

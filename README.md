@@ -28,12 +28,13 @@ https://wandb.ai/authorize
 Note that the Dockerfile has all imports necessary to run LOLBO on the example GuacaMol and Penalized Log P molecular optimization tasks in this repo. If you would like to apply LOLBO to other optimization tasks with additional package requirements, additional install statements can be added to the Dockerfile as needed.
 
 ### Option B: Conda
-Follow the steps below to install all dependencies to run LOLBO:
+Follow the steps below to install all dependencies to run LOLBO. Execute in the repository ROOT.
 
 ```Bash
 conda env create -f conda_env.yml
 conda activate lolbo
 pip install molsets --no-deps
+pip install -e .
 ```
 
 ## How to Run LOLBO on Our Example Molecular Optimization Tasks

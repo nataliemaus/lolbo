@@ -1,5 +1,3 @@
-import sys
-sys.path.append("../")
 import torch
 import gpytorch
 import math
@@ -37,7 +35,7 @@ class LOLBOState:
         self.init_n_epochs      = init_n_epochs     # num epochs train surr model on initial data
         self.learning_rte       = learning_rte      # lr to use for model updates
         self.bsz                = bsz               # acquisition batch size
-        self.acq_func           = acq_func          # acquisition function (Expected Imporvement (ei) or Thompson Sampling (ts))
+        self.acq_func           = acq_func          # acquisition function (Expected Improvement (ei) or Thompson Sampling (ts))
         self.verbose            = verbose
 
         assert acq_func in ["ei", "ts"]
@@ -58,7 +56,7 @@ class LOLBOState:
 
 
     def initialize_xs_to_scores_dict(self,):
-        # put intial xs and ys in dict to be tracked by objective
+        # put initial xs and ys in dict to be tracked by objective
         init_xs_to_scores_dict = {}
         for idx, x in enumerate(self.train_x):
             init_xs_to_scores_dict[x] = self.train_y.squeeze()[idx].item()
@@ -235,7 +233,7 @@ class LOLBOState:
         evaluate them, and update data
         '''
         # 1. Generate a batch of candidates in 
-        #   trust region using surrogaate model
+        #   trust region using surrogate model
         z_next = generate_batch(
             state=self.tr_state,
             model=self.model,
@@ -252,7 +250,7 @@ class LOLBOState:
             x_next = out_dict['decoded_xs']       
             if self.minimize:
                 y_next = y_next * -1
-        # 3. Aadd new evaluated points to dataset (update_next)
+        # 3. Add new evaluated points to dataset (update_next)
         if len(y_next) != 0:
             y_next = torch.from_numpy(y_next).float()
             self.update_next(

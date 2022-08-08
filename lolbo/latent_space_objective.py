@@ -1,5 +1,3 @@
-import sys
-sys.path.append("../")
 import numpy as np
 import torch 
 
@@ -9,7 +7,7 @@ class LatentSpaceObjective:
         class supports any optimization task with accompanying VAE
         such that during optimization, latent space points (z) 
         must be passed through the VAE decoder to obtain 
-        origianl input space points (x) which can then 
+        original input space points (x) which can then 
         be passed into the oracle to obtain objective values (y)''' 
 
     def __init__(
@@ -29,7 +27,7 @@ class LatentSpaceObjective:
         #   to differentiate between similar tasks (ie for guacamol)
         self.task_id = task_id
 
-        # load in pretrained VAE, store in variable self.vaae
+        # load in pretrained VAE, store in variable self.vae
         self.vae = None
         self.initialize_vae()
         assert self.vae is not None
@@ -49,7 +47,7 @@ class LatentSpaceObjective:
         scores = []
         for x in decoded_xs:
             # if we have already computed the score, don't 
-            #   re-compute (don't call oracle unnessairly)
+            #   re-compute (don't call oracle unnecessarily)
             if x in self.xs_to_scores_dict:
                 score = self.xs_to_scores_dict[x]
             else: # otherwise call the oracle to get score
@@ -84,7 +82,7 @@ class LatentSpaceObjective:
         '''Input
                 z: a tensor latent space points
             Output
-                a correspodinng list of the decoded input space 
+                a corresponding list of the decoded input space 
                 items output by vae decoder 
         '''
         raise NotImplementedError("Must implement vae_decode()")

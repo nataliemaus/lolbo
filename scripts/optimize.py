@@ -1,5 +1,3 @@
-import sys
-sys.path.append("../")
 import torch
 import fire
 import warnings
@@ -22,9 +20,9 @@ class Optimize(object):
     Run LOLBO Optimization
     Args:
         task_id: String id for optimization task, by default the wandb project name will be f'optimize-{task_id}'
-        seed: Random seed to be set. If None, no particular ranodm seed is set
-        track_with_wandb: if True, run progreess will be tracked using Weights and Biases API
-        wandb_entity: Username for your wandb account (valid unsername necessary iff track_with_wandb is True)
+        seed: Random seed to be set. If None, no particular random seed is set
+        track_with_wandb: if True, run progress will be tracked using Weights and Biases API
+        wandb_entity: Username for your wandb account (valid username necessary iff track_with_wandb is True)
         wandb_project_name: Name of wandb project where results will be logged (if no name is specified, default project name will be f"optimimze-{self.task_id}")
         minimize: If True we want to minimize the objective, otherwise we assume we want to maximize the objective
         max_n_oracle_calls: Max number of oracle calls allowed (budget). Optimization run terminates when this budget is exceeded
@@ -119,7 +117,7 @@ class Optimize(object):
 
     def initialize_objective(self):
         ''' Initialize Objective for specific task
-            must define self.objective obejct
+            must define self.objective object
             '''
         return self
 
@@ -130,7 +128,7 @@ class Optimize(object):
             Must define the following:
                 self.init_train_x (a list of x's)
                 self.init_train_y (a tensor of scores/y's)
-                self.init_train_y (a tensor of corresponding latnet space points)
+                self.init_train_y (a tensor of corresponding latent space points)
         '''
         return self
 

@@ -1,7 +1,3 @@
-import sys
-sys.path.append("../") 
-sys.path.append("../../") 
-sys.path.append("../../../") 
 import os
 from math import log
 import pytorch_lightning as pl

@@ -1,5 +1,3 @@
-import sys
-sys.path.append("../")
 import fire
 from scripts.optimize import Optimize
 from lolbo.molecule_objective import MoleculeObjective
@@ -55,7 +53,7 @@ class MoleculeOptimization(Optimize):
             Must define the following:
                 self.init_train_x (a list of x's)
                 self.init_train_y (a tensor of scores/y's)
-                self.init_train_y (a tensor of corresponding latnet space points)
+                self.init_train_y (a tensor of corresponding latent space points)
             '''
         self.init_train_x, self.init_train_z, self.init_train_y = load_molecule_train_data(
             task_id=self.task_id,
