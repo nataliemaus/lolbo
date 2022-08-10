@@ -1,3 +1,6 @@
+import sys
+sys.path.append("../")
+
 import fire
 from scripts.optimize import Optimize
 from lolbo.molecule_objective import MoleculeObjective
