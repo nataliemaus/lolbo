@@ -34,7 +34,6 @@ Follow the steps below to install all dependencies to run LOLBO. Execute in the 
 conda env create -f conda_env.yml
 conda activate lolbo
 pip install molsets --no-deps
-pip install -e .
 ```
 
 ## How to Run LOLBO on Our Example Molecular Optimization Tasks
