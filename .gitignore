@@ -1,0 +1,14 @@
+wandb/
+wandb/*
+__pycache__/
+__pycache__/*
+*.ipynb
+*.ckpt
+*.pt
+!SELFIES-VAE-state-dict.pt
+*.prof
+data/
+data/*
+mujoco_vids/
+mujoco_vids/*
+lolbo.egg-info
