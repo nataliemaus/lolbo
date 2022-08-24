@@ -1,4 +1,6 @@
 import torch
+import random
+import numpy as np
 import fire
 import warnings
 warnings.filterwarnings('ignore')
@@ -136,6 +138,8 @@ class Optimize(object):
     def set_seed(self):
         if self.seed is not None:
             torch.manual_seed(self.seed) 
+            random.seed(self.seed)
+            np.random.seed(self.seed)
         return self
     
 
