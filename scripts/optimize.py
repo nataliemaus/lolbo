@@ -58,6 +58,7 @@ class Optimize(object):
         e2e_freq: int=10,
         update_e2e: bool=True,
         reset_vae_at_tr_restart: bool=False,
+        tr_restart_limit=4,
         k: int=1_000,
         verbose: bool=True,
         ):
@@ -76,6 +77,7 @@ class Optimize(object):
         self.e2e_freq = e2e_freq
         self.update_e2e = update_e2e
         self.reset_vae_at_tr_restart = reset_vae_at_tr_restart
+        self.tr_restart_limit = tr_restart_limit
         self.set_seed()
         if wandb_project_name: # if project name specified
             self.wandb_project_name = wandb_project_name
@@ -140,6 +142,11 @@ class Optimize(object):
             torch.manual_seed(self.seed) 
             random.seed(self.seed)
             np.random.seed(self.seed)
+            torch.cuda.manual_seed(self.seed)
+            torch.backends.cudnn.deterministic = True
+            torch.backends.cudnn.benchmark = False
+            os.environ["PYTHONHASHSEED"] = str(self.seed)
+
         return self
     
 
@@ -164,7 +171,7 @@ class Optimize(object):
                 "best_found":self.lolbo_state.best_score_seen,
                 "n_oracle_calls":self.lolbo_state.objective.num_calls,
                 "total_number_of_e2e_updates":self.lolbo_state.tot_num_e2e_updates,
-                "best_input_seen":self.lolbo_state.best_x_seen 
+                "best_input_seen":self.lolbo_state.best_x_seen,
             }
             dict_log[f"TR_length"] = self.lolbo_state.tr_state.length
             self.tracker.log(dict_log)
@@ -177,6 +184,8 @@ class Optimize(object):
         '''
         # creates wandb tracker iff self.track_with_wandb == True
         self.create_wandb_tracker()
+        # track number of consecutive times the trust region is restarted 
+        self.num_consec_tr_restarts = 0
         #main optimization loop
         while self.lolbo_state.objective.num_calls < self.max_n_oracle_calls:
             self.log_data_to_wandb_on_each_loop()
@@ -191,8 +200,11 @@ class Optimize(object):
             self.lolbo_state.acquisition()
             if self.lolbo_state.tr_state.restart_triggered:
                 self.lolbo_state.initialize_tr_state()
-                if self.reset_vae_at_tr_restart:
-                    self.lolbo_state.objective.initialize_vae()
+                self.num_consec_tr_restarts += 1 
+                # If the tr has been restarted self.tr_restart_limit times, we are likely stuck so we reset the VAE and GP
+                if self.reset_vae_at_tr_restart and (self.num_consec_tr_restarts == self.tr_restart_limit):
+                    self.lolbo_state.reset_state() 
+                    self.num_consec_tr_restarts = 0 
             # if a new best has been found, print out new best input and score:
             if self.lolbo_state.new_best_found:
                 if self.verbose:
