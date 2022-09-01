@@ -57,11 +57,9 @@ class Optimize(object):
         num_update_epochs: int=2,
         e2e_freq: int=10,
         update_e2e: bool=True,
-        reset_vae_at_tr_restart: bool=False,
-        tr_restart_limit=4,
         k: int=1_000,
         verbose: bool=True,
-        ):
+    ):
 
         # add all local args to method args dict to be logged by wandb
         self.method_args = {}
@@ -76,8 +74,6 @@ class Optimize(object):
         self.num_initialization_points = num_initialization_points
         self.e2e_freq = e2e_freq
         self.update_e2e = update_e2e
-        self.reset_vae_at_tr_restart = reset_vae_at_tr_restart
-        self.tr_restart_limit = tr_restart_limit
         self.set_seed()
         if wandb_project_name: # if project name specified
             self.wandb_project_name = wandb_project_name
@@ -138,17 +134,24 @@ class Optimize(object):
 
 
     def set_seed(self):
+        # The flag below controls whether to allow TF32 on matmul. This flag defaults to False
+        # in PyTorch 1.12 and later.
+        torch.backends.cuda.matmul.allow_tf32 = False
+        # The flag below controls whether to allow TF32 on cuDNN. This flag defaults to True.
+        torch.backends.cudnn.allow_tf32 = False
         if self.seed is not None:
             torch.manual_seed(self.seed) 
             random.seed(self.seed)
             np.random.seed(self.seed)
             torch.cuda.manual_seed(self.seed)
-            torch.backends.cudnn.deterministic = True
+            torch.cuda.manual_seed(self.seed)
+            torch.cuda.manual_seed_all(self.seed)
             torch.backends.cudnn.benchmark = False
+            torch.backends.cudnn.deterministic = True
             os.environ["PYTHONHASHSEED"] = str(self.seed)
 
         return self
-    
+
 
     def create_wandb_tracker(self):
         if self.track_with_wandb:
@@ -184,8 +187,6 @@ class Optimize(object):
         '''
         # creates wandb tracker iff self.track_with_wandb == True
         self.create_wandb_tracker()
-        # track number of consecutive times the trust region is restarted 
-        self.num_consec_tr_restarts = 0
         #main optimization loop
         while self.lolbo_state.objective.num_calls < self.max_n_oracle_calls:
             self.log_data_to_wandb_on_each_loop()
@@ -200,11 +201,6 @@ class Optimize(object):
             self.lolbo_state.acquisition()
             if self.lolbo_state.tr_state.restart_triggered:
                 self.lolbo_state.initialize_tr_state()
-                self.num_consec_tr_restarts += 1 
-                # If the tr has been restarted self.tr_restart_limit times, we are likely stuck so we reset the VAE and GP
-                if self.reset_vae_at_tr_restart and (self.num_consec_tr_restarts == self.tr_restart_limit):
-                    self.lolbo_state.reset_state() 
-                    self.num_consec_tr_restarts = 0 
             # if a new best has been found, print out new best input and score:
             if self.lolbo_state.new_best_found:
                 if self.verbose:
