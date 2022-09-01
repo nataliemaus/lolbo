@@ -22,7 +22,7 @@ Follow the steps below to install all dependencies to run LOLBO. Execute in the 
 
 ```Bash
 conda env create -f conda_env.yml
-conda activate lolbo
+conda activate lolboenv
 pip install molsets --no-deps
 ```
 
