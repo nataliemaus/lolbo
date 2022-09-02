@@ -8,8 +8,7 @@ from lolbo.utils.mol_utils.moses_metrics.SA_Score import sascorer
 try: # for tdc docking 
     from tdc import Oracle
 except: 
-    print("Warning: Failed to import tdc docking environment")
-    print("If currently optimizing a tdc docking score, activate compatible environment (ie conda activate tdc)")
+    print("Warning: Failed to import tdc docking oracle, only needed for molecule docking tasks")
 
 from rdkit import Chem
 from rdkit.Chem import Crippen

@@ -21,9 +21,9 @@ conda install -c conda-forge git-lfs
 Follow the steps below to install all dependencies to run LOLBO. Execute in the repository ROOT.
 
 ```Bash
-conda env create -f conda_env.yml
-conda activate lolboenv
-pip install molsets --no-deps
+conda env create -f lolbo_env.yml
+conda activate lolbo_conda_env1
+pip install molsets==0.3.1 --no-deps
 ```
 
 The resultant environment will have all imports necessary to run LOLBO on the example GuacaMol and Penalized Log P molecular optimization tasks in this repo.
