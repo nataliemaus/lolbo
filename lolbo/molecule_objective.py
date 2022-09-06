@@ -6,18 +6,8 @@ from lolbo.utils.mol_utils.selfies_vae.model_positional_unbounded import SELFIES
 from lolbo.utils.mol_utils.selfies_vae.data import collate_fn
 from lolbo.latent_space_objective import LatentSpaceObjective
 from lolbo.utils.mol_utils.mol_utils import GUACAMOL_TASK_NAMES
-
-# Install Molecules Dependencies: 
-# pip install rdkit-pypi
-# pip install guacamol
-# pip install selfies
-# pip install networkx
-# apt update
-# apt install -y build-essential
-# apt install -y libxrender1 libxext6 software-properties-common apt-utils
-# conda install -y pomegranate 
-# pip install --no-deps molsets
-# pip install fcd-torch
+import pkg_resources
+assert pkg_resources.get_distribution("selfies").version == '2.0.0'
 
 
 class MoleculeObjective(LatentSpaceObjective):
@@ -128,17 +118,6 @@ class MoleculeObjective(LatentSpaceObjective):
                 self.smiles_to_selfies[smile] = selfie
             tokenized_selfie = self.dataobj.tokenize_selfies([selfie])[0]
             encoded_selfie = self.dataobj.encode(tokenized_selfie).unsqueeze(0)
-
-            # try:
-            #     selfie = sf.encoder(smile)
-            #     tokenized_selfie = self.dataobj.tokenize_selfies([selfie])[0]
-            #     encoded_selfie = self.dataobj.encode(tokenized_selfie).unsqueeze(0)
-            #     self.smiles_to_selfies[smile] = selfie
-            # except:
-            #     selfie = self.smiles_to_selfies[smile]
-            #     tokenized_selfie = self.dataobj.tokenize_selfies([selfie])[0]
-            #     encoded_selfie = self.dataobj.encode(tokenized_selfie).unsqueeze(0)
-
             X_list.append(encoded_selfie)
         X = collate_fn(X_list)
         dict = self.vae(X.cuda())
