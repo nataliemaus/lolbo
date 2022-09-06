@@ -45,6 +45,7 @@ class MoleculeOptimization(Optimize):
             path_to_vae_statedict=self.path_to_vae_statedict,
             path_to_train_data=self.path_to_vae_train_data,
             max_string_length=self.max_string_length,
+            smiles_to_selfies=self.init_smiles_to_selfies
         )
 
         return self
@@ -58,16 +59,22 @@ class MoleculeOptimization(Optimize):
                 self.init_train_y (a tensor of scores/y's)
                 self.init_train_y (a tensor of corresponding latent space points)
             '''
-        self.init_train_x, self.init_train_z, self.init_train_y = load_molecule_train_data(
+        smiles, selfies, zs, ys = load_molecule_train_data(
             task_id=self.task_id,
             data_folder=self.path_to_data_folder,
             num_initialization_points=self.num_initialization_points,
         )
+        self.init_train_x, self.init_train_z, self.init_train_y = smiles, zs, ys
         if self.verbose:
             print("Loaded initial training data")
             print("train z shape:", self.init_train_z.shape)
             print("train y shape:", self.init_train_y.shape)
             print(f"train x list length: {len(self.init_train_x)}\n")
+
+        # create initial smiles to selfies dict
+        self.init_smiles_to_selfies = {}
+        for ix, smile in enumerate(self.init_train_x):
+            self.init_smiles_to_selfies[smile] = selfies[ix]
 
         return self 
 

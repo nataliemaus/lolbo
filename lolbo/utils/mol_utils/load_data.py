@@ -9,7 +9,8 @@ def load_molecule_train_data(
     num_initialization_points,
 ): 
     train_z = load_train_z(data_folder) 
-    train_x = load_all_decoded_smiles_list(data_folder)[0:len(train_z)] 
+    train_x_smiles = load_all_decoded_smiles_list(data_folder)[0:len(train_z)] 
+    train_x_selfies = load_all_decoded_selfies_list(data_folder)[0:len(train_z)] 
     train_y = load_train_y(task_id, data_folder)
 
     if len(train_z) < len(train_y):
@@ -17,11 +18,18 @@ def load_molecule_train_data(
     else:
         train_z = train_z[0:len(train_y)]
     
-    train_x = train_x[0:len(train_y)] 
+    train_x_smiles = train_x_smiles[0:len(train_y)] 
+    train_x_selfies = train_x_selfies[0:len(train_y)] 
     train_z = train_z[np.logical_not(np.isnan(train_y))]
-    train_x = np.array(train_x)
-    train_x = train_x[np.logical_not(np.isnan(train_y))]
-    train_x = train_x.tolist()
+
+    train_x_smiles = np.array(train_x_smiles)
+    train_x_smiles = train_x_smiles[np.logical_not(np.isnan(train_y))]
+    train_x_smiles = train_x_smiles.tolist()
+
+    train_x_selfies = np.array(train_x_selfies)
+    train_x_selfies = train_x_selfies[np.logical_not(np.isnan(train_y))]
+    train_x_selfies = train_x_selfies.tolist()
+
     train_y = train_y[np.logical_not(np.isnan(train_y))]
     train_z = torch.from_numpy(train_z).float()
     train_y = torch.from_numpy(train_y).float() 
@@ -30,17 +38,23 @@ def load_molecule_train_data(
         print(f"Initializing with {num_initialization_points} points from training set")
         train_z = train_z[0:num_initialization_points] 
         train_y = train_y[0:num_initialization_points]
-        train_x = train_x[0:num_initialization_points] 
+        train_x_smiles = train_x_smiles[0:num_initialization_points] 
+        train_x_selfies = train_x_selfies[0:num_initialization_points] 
 
     train_y = train_y.unsqueeze(-1)
-    return train_x, train_z, train_y
-
+    return train_x_smiles, train_x_selfies, train_z, train_y
 
 
 def load_all_decoded_smiles_list(folder): 
     smiles_path = folder + "decoded_smiles.csv"
     smiles = pd.read_csv(smiles_path, header=None).values.squeeze().tolist()
     return smiles
+
+
+def load_all_decoded_selfies_list(folder): 
+    selfies_path = folder + "decoded_selfies.csv"
+    selfies = pd.read_csv(selfies_path, header=None).values.squeeze().tolist()
+    return selfies
 
 
 def load_train_z(folder):

@@ -84,10 +84,6 @@ class Optimize(object):
         if self.track_with_wandb:
             assert self.wandb_entity, "Must specify a valid wandb account username (wandb_entity) to run with wandb tracking"
 
-        # initialize latent space objective (self.objective) for particular task
-        self.initialize_objective()
-        assert isinstance(self.objective, LatentSpaceObjective), "self.objective must be an instance of LatentSpaceObjective"
-
         # initialize train data for particular task
         #   must define self.init_train_x, self.init_train_y, and self.init_train_z
         self.load_train_data()
@@ -97,6 +93,10 @@ class Optimize(object):
         assert len(self.init_train_x) == self.num_initialization_points, f"load_train_data() must initialize exactly self.num_initialization_points={self.num_initialization_points} xs, instead got {len(self.init_train_x)} xs"
         assert self.init_train_y.shape[0] == self.num_initialization_points, f"load_train_data() must initialize exactly self.num_initialization_points={self.num_initialization_points} ys, instead got {self.init_train_y.shape[0]} ys"
         assert self.init_train_z.shape[0] == self.num_initialization_points, f"load_train_data() must initialize exactly self.num_initialization_points={self.num_initialization_points} zs, instead got {self.init_train_z.shape[0]} zs"
+
+        # initialize latent space objective (self.objective) for particular task
+        self.initialize_objective()
+        assert isinstance(self.objective, LatentSpaceObjective), "self.objective must be an instance of LatentSpaceObjective"
 
         # initialize lolbo state
         self.lolbo_state = LOLBOState(

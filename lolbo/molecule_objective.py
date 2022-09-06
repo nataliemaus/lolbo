@@ -32,7 +32,8 @@ class MoleculeObjective(LatentSpaceObjective):
         xs_to_scores_dict={},
         max_string_length=1024,
         num_calls=0,
-        ):
+        smiles_to_selfies={},
+    ):
 
         assert task_id in GUACAMOL_TASK_NAMES + ["logp"]
 
@@ -40,14 +41,14 @@ class MoleculeObjective(LatentSpaceObjective):
         self.path_to_vae_statedict  = path_to_vae_statedict # path to trained vae stat dict
         self.train_data_path        = path_to_train_data # full training dataset used to initialize vae vocabulary
         self.max_string_length      = max_string_length # max string length that VAE can generate
-        self.smiles_to_selfies      = {} # dict to hold computed mappings form smiles to selfies strings
+        self.smiles_to_selfies      = smiles_to_selfies # dict to hold computed mappings form smiles to selfies strings
 
         super().__init__(
             num_calls=num_calls,
             xs_to_scores_dict=xs_to_scores_dict,
             task_id=task_id,
         )
-
+        
 
     def vae_decode(self, z):
         '''Input
@@ -85,11 +86,8 @@ class MoleculeObjective(LatentSpaceObjective):
                 or np.nan in the case that x is an invalid input
         '''
         # method assumes x is a single smiles string
-        score = smiles_to_desired_scores(
-                    [x], 
-                    self.task_id,
-                    ).item()
-        
+        score = smiles_to_desired_scores([x], self.task_id).item()
+
         return score
 
 
@@ -123,22 +121,24 @@ class MoleculeObjective(LatentSpaceObjective):
         X_list = []
         for smile in xs_batch:
             try:
-                ''' Since there are multiple ways to represent a
-                    smile smiles string as a SELFIE, sometimes 
-                    sf.encoder gives a selfies strings with rare
-                    tokens that can't be tokenized by the dataobj
-                    since they weren't in the initial train set,
-                    in this case we rely on the smiles_to_selfies
-                    dict where we record all initial decoded selfies
-                    that were transformed to smiles during optimization
-                    '''
-                selfie = sf.encoder(smile)
-                tokenized_selfie = self.dataobj.tokenize_selfies([selfie])[0]
-                encoded_selfie = self.dataobj.encode(tokenized_selfie).unsqueeze(0)
-            except:
+                # avoid re-computing mapping from smiles to selfies to save time
                 selfie = self.smiles_to_selfies[smile]
-                tokenized_selfie = self.dataobj.tokenize_selfies([selfie])[0]
-                encoded_selfie = self.dataobj.encode(tokenized_selfie).unsqueeze(0)
+            except:
+                selfie = sf.encoder(smile)
+                self.smiles_to_selfies[smile] = selfie
+            tokenized_selfie = self.dataobj.tokenize_selfies([selfie])[0]
+            encoded_selfie = self.dataobj.encode(tokenized_selfie).unsqueeze(0)
+
+            # try:
+            #     selfie = sf.encoder(smile)
+            #     tokenized_selfie = self.dataobj.tokenize_selfies([selfie])[0]
+            #     encoded_selfie = self.dataobj.encode(tokenized_selfie).unsqueeze(0)
+            #     self.smiles_to_selfies[smile] = selfie
+            # except:
+            #     selfie = self.smiles_to_selfies[smile]
+            #     tokenized_selfie = self.dataobj.tokenize_selfies([selfie])[0]
+            #     encoded_selfie = self.dataobj.encode(tokenized_selfie).unsqueeze(0)
+
             X_list.append(encoded_selfie)
         X = collate_fn(X_list)
         dict = self.vae(X.cuda())
