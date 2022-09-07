@@ -7,8 +7,10 @@ from lolbo.utils.mol_utils.selfies_vae.data import collate_fn
 from lolbo.latent_space_objective import LatentSpaceObjective
 from lolbo.utils.mol_utils.mol_utils import GUACAMOL_TASK_NAMES
 import pkg_resources
+# make sure molecule software versions are correct: 
 assert pkg_resources.get_distribution("selfies").version == '2.0.0'
-
+assert pkg_resources.get_distribution("rdkit-pypi").version == '2022.3.1'
+assert pkg_resources.get_distribution("molsets").version == '0.3.1'
 
 class MoleculeObjective(LatentSpaceObjective):
     '''MoleculeObjective class supports all molecule optimization

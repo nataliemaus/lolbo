@@ -13,7 +13,10 @@ def update_models_end_to_end(
     learning_rte,
     num_update_epochs
 ):
-    '''Finetune VAE end to end with surrogate model'''
+    '''Finetune VAE end to end with surrogate model
+    This method is build to be compatible with the 
+    SELFIES VAE interface
+    '''
     objective.vae.train()
     model.train() 
     optimizer = torch.optim.Adam([
