@@ -12,3 +12,4 @@ data/*
 mujoco_vids/
 mujoco_vids/*
 lolbo.egg-info
+*train-zs.csv

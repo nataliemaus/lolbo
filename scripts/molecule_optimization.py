@@ -3,7 +3,7 @@ sys.path.append("../")
 import fire
 from scripts.optimize import Optimize
 from lolbo.molecule_objective import MoleculeObjective
-from lolbo.utils.mol_utils.load_data import load_molecule_train_data
+from lolbo.utils.mol_utils.load_data import load_molecule_train_data, compute_train_zs
 
 
 class MoleculeOptimization(Optimize):
@@ -20,14 +20,10 @@ class MoleculeOptimization(Optimize):
     def __init__(
         self,
         path_to_vae_statedict: str="../lolbo/utils/mol_utils/selfies_vae/state_dict/SELFIES-VAE-state-dict.pt",
-        path_to_vae_train_data: str="../selfies_vae_data/original_vae_train_selfies.csv",
-        path_to_data_folder: str="../selfies_vae_data/decoded_guacamol_scores/",
         max_string_length: int=1024,
         **kwargs
     ):
         self.path_to_vae_statedict = path_to_vae_statedict
-        self.path_to_vae_train_data = path_to_vae_train_data
-        self.path_to_data_folder = path_to_data_folder
         self.max_string_length = max_string_length
 
         super().__init__(**kwargs)
@@ -42,10 +38,16 @@ class MoleculeOptimization(Optimize):
         self.objective = MoleculeObjective(
             task_id=self.task_id,
             path_to_vae_statedict=self.path_to_vae_statedict,
-            path_to_train_data=self.path_to_vae_train_data,
             max_string_length=self.max_string_length,
             smiles_to_selfies=self.init_smiles_to_selfies
         )
+        # if train zs have not been pre-computed for particular vae, compute them 
+        #   by passing initialization selfies through vae 
+        if self.init_train_z is None:
+            self.init_train_z = compute_train_zs(
+                self.objective,
+                self.init_train_x,
+            )
 
         return self
 
@@ -56,17 +58,17 @@ class MoleculeOptimization(Optimize):
             Must define the following:
                 self.init_train_x (a list of x's)
                 self.init_train_y (a tensor of scores/y's)
-                self.init_train_y (a tensor of corresponding latent space points)
+                self.init_train_z (a tensor of corresponding latent space points)
             '''
+        assert self.num_initialization_points <= 20_000 
         smiles, selfies, zs, ys = load_molecule_train_data(
             task_id=self.task_id,
-            data_folder=self.path_to_data_folder,
             num_initialization_points=self.num_initialization_points,
+            path_to_vae_statedict=self.path_to_vae_statedict
         )
         self.init_train_x, self.init_train_z, self.init_train_y = smiles, zs, ys
         if self.verbose:
             print("Loaded initial training data")
-            print("train z shape:", self.init_train_z.shape)
             print("train y shape:", self.init_train_y.shape)
             print(f"train x list length: {len(self.init_train_x)}\n")
 

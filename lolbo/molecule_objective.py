@@ -12,6 +12,7 @@ assert pkg_resources.get_distribution("selfies").version == '2.0.0'
 assert pkg_resources.get_distribution("rdkit-pypi").version == '2022.3.1'
 assert pkg_resources.get_distribution("molsets").version == '0.3.1'
 
+
 class MoleculeObjective(LatentSpaceObjective):
     '''MoleculeObjective class supports all molecule optimization
         tasks and uses the SELFIES VAE by default '''
@@ -20,18 +21,15 @@ class MoleculeObjective(LatentSpaceObjective):
         self,
         task_id='pdop',
         path_to_vae_statedict="../lolbo/utils/mol_utils/selfies_vae/state_dict/SELFIES-VAE-state-dict.pt",
-        path_to_train_data="../selfies_vae_data/original_vae_train_selfies.csv",
         xs_to_scores_dict={},
         max_string_length=1024,
         num_calls=0,
         smiles_to_selfies={},
     ):
-
         assert task_id in GUACAMOL_TASK_NAMES + ["logp"]
 
         self.dim                    = 256 # SELFIES VAE DEFAULT LATENT SPACE DIM
         self.path_to_vae_statedict  = path_to_vae_statedict # path to trained vae stat dict
-        self.train_data_path        = path_to_train_data # full training dataset used to initialize vae vocabulary
         self.max_string_length      = max_string_length # max string length that VAE can generate
         self.smiles_to_selfies      = smiles_to_selfies # dict to hold computed mappings form smiles to selfies strings
 
@@ -87,7 +85,7 @@ class MoleculeObjective(LatentSpaceObjective):
         ''' Sets self.vae to the desired pretrained vae and 
             sets self.dataobj to the corresponding data class 
             used to tokenize inputs, etc. '''
-        self.dataobj = SELFIESDataset(self.train_data_path)
+        self.dataobj = SELFIESDataset()
         self.vae = InfoTransformerVAE(dataset=self.dataobj)
         # load in state dict of trained model:
         if self.path_to_vae_statedict:

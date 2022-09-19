@@ -6,14 +6,16 @@ import torch.nn.functional as F
 from pathlib import Path
 
 class SELFIESDataModule(pl.LightningDataModule):
-    def __init__(self, batch_size):
+    def __init__(
+        self, 
+        batch_size,
+        train_data_path,
+        validation_data_path,
+    ):
         super().__init__()
         self.batch_size = batch_size
-
-        # self.train = SELFIESDataset("./selfies_data/guacamol_v1_train_selfies2.csv")
-        # self.val   = SELFIESDataset("./selfies_data/guacamol_v1_test_selfies2.csv")
-        self.train = SELFIESDataset(Path(Path.home() / "lolbo/data/guacamol_data/guacamol_v1_train_selfies2.csv"))
-        self.val   = SELFIESDataset(Path(Path.home() / "lolbo/data/guacamol_data/guacamol_v1_test_selfies2.csv"))
+        self.train = SELFIESDataset(Path(Path.home() / train_data_path))
+        self.val   = SELFIESDataset(Path(Path.home() / validation_data_path))
 
         self.val.vocab     = self.train.vocab
         self.val.vocab2idx = self.train.vocab2idx
@@ -30,18 +32,42 @@ class SELFIESDataModule(pl.LightningDataModule):
     def val_dataloader(self):
         return DataLoader(self.val,   batch_size=self.batch_size, pin_memory=True, shuffle=False, collate_fn=collate_fn, num_workers=10)
 
+
+DEFAULT_SELFIES_VOCAB = ['<start>', '<stop>', '[#Branch1]', '[#Branch2]', 
+    '[#C-1]', '[#C]', '[#N+1]', '[#N]', '[#O+1]', '[=B]', '[=Branch1]', 
+    '[=Branch2]', '[=C-1]', '[=C]', '[=N+1]', '[=N-1]', '[=NH1+1]', 
+    '[=NH2+1]', '[=N]', '[=O+1]', '[=OH1+1]', '[=O]', '[=PH1]', '[=P]', 
+    '[=Ring1]', '[=Ring2]', '[=S+1]', '[=SH1]', '[=S]', '[=Se+1]', '[=Se]', 
+    '[=Si]', '[B-1]', '[BH0]', '[BH1-1]', '[BH2-1]', '[BH3-1]', '[B]', '[Br+2]', 
+    '[Br-1]', '[Br]', '[Branch1]', '[Branch2]', '[C+1]', '[C-1]', '[CH1+1]', 
+    '[CH1-1]', '[CH1]', '[CH2+1]', '[CH2]', '[C]', '[Cl+1]', '[Cl+2]', '[Cl+3]', 
+    '[Cl-1]', '[Cl]', '[F+1]', '[F-1]', '[F]', '[H]', '[I+1]', '[I+2]', '[I+3]', 
+    '[I]', '[N+1]', '[N-1]', '[NH0]', '[NH1+1]', '[NH1-1]', '[NH1]', '[NH2+1]', 
+    '[NH3+1]', '[N]', '[O+1]', '[O-1]', '[OH0]', '[O]', '[P+1]', '[PH1]', '[PH2+1]', 
+    '[P]', '[Ring1]', '[Ring2]', '[S+1]', '[S-1]', '[SH1]', '[S]', '[Se+1]', '[Se-1]', 
+    '[SeH1]', '[SeH2]', '[Se]', '[Si-1]', '[SiH1-1]', '[SiH1]', '[SiH2]', '[Si]'
+]
+
+
 class SELFIESDataset(Dataset):
-    def __init__(self, fname):
-        with open(fname, 'r') as f:
-            selfie_strings = [x.strip() for x in f.readlines()]
-
+    def __init__(
+        self,
+        fname=None,
+        load_data=False,
+    ):
         self.data = []
-        for string in selfie_strings:
-            self.data.append(list(sf.split_selfies(string)))
+        if load_data:
+            assert fname is not None
+            with open(fname, 'r') as f:
+                selfie_strings = [x.strip() for x in f.readlines()]
+            for string in selfie_strings:
+                self.data.append(list(sf.split_selfies(string)))
+            self.vocab = set((token for selfie in self.data for token in selfie))
+            self.vocab.discard(".")
+            self.vocab = ['<start>', '<stop>', *sorted(list(self.vocab))]
+        else:
+            self.vocab = DEFAULT_SELFIES_VOCAB
 
-        self.vocab = set((token for selfie in self.data for token in selfie))
-        self.vocab.discard(".")
-        self.vocab = ['<start>', '<stop>', *sorted(list(self.vocab))]
         self.vocab2idx = {
             v:i
             for i, v in enumerate(self.vocab)
@@ -58,14 +84,12 @@ class SELFIESDataset(Dataset):
 
     def decode(self, tokens):
         dec = [self.vocab[t] for t in tokens]
-
         # Chop out start token and everything past (and including) first stop token
         stop = dec.index("<stop>") if "<stop>" in dec else None # want first stop token
         selfie = dec[0:stop] # cut off stop tokens
         while "<start>" in selfie: # start at last start token (I've seen one case where it started w/ 2 start tokens)
             start = (1+dec.index("<start>")) 
             selfie = selfie[start:]
-
         selfie = "".join(selfie)
         return selfie
 

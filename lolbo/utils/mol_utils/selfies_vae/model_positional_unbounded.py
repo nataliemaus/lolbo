@@ -1,11 +1,10 @@
-import os
+import os 
 from math import log
 import pytorch_lightning as pl
 from pytorch_lightning.callbacks import ModelCheckpoint, RichProgressBar
 import torch
 from torch import Tensor, nn
 from torch.nn import functional as F
-
 from lolbo.utils.mol_utils.selfies_vae.data import SELFIESDataModule, SELFIESDataset
 from torch.optim import Adam
 
@@ -16,7 +15,7 @@ ENCODER_WARMUP_STEPS = 100
 DECODER_WARMUP_STEPS = 100
 AGGRESSIVE_STEPS = 5
 
-# Disable verbose rdkit logs
+# Disable verbose rdkit logs 
 from rdkit import rdBase
 rdBase.DisableLog('rdApp.*')
 
