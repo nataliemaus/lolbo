@@ -27,7 +27,8 @@ def load_train_z(
     num_initialization_points,
     path_to_vae_statedict,
 ):
-    path_to_init_train_zs = path_to_vae_statedict.replace(".pt", '-train-zs.csv')
+    state_dict_file_type = path_to_vae_statedict.split('.')[-1] # usually .pt or .ckpt
+    path_to_init_train_zs = path_to_vae_statedict.replace(f".{state_dict_file_type}", '-train-zs.csv')
     # if we have a path to pre-computed train zs for vae, load them
     try:
         zs = pd.read_csv(path_to_init_train_zs, header=None).values
@@ -57,7 +58,8 @@ def compute_train_zs(
         init_zs.append(zs.detach().cpu())
     init_zs = torch.cat(init_zs, dim=0)
     # now save the zs so we don't have to recompute them in the future:
-    path_to_init_train_zs = mol_objective.path_to_vae_statedict.replace(".pt", '-train-zs.csv')
+    state_dict_file_type = mol_objective.path_to_vae_statedict.split('.')[-1] # usually .pt or .ckpt
+    path_to_init_train_zs = mol_objective.path_to_vae_statedict.replace(f".{state_dict_file_type}", '-train-zs.csv')
     zs_arr = init_zs.cpu().detach().numpy()
     pd.DataFrame(zs_arr).to_csv(path_to_init_train_zs, header=None, index=None) 
 
