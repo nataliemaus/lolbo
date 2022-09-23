@@ -36,7 +36,6 @@ class Optimize(object):
         num_update_epochs: Number of epochs to update the model(s) for on each optimization step
         e2e_freq: Number of optimization steps before we update the models end to end (end to end update frequency)
         update_e2e: If True, we update the models end to end (we run LOLBO). If False, we never update end to end (we run TuRBO)
-        reset_vae_at_tr_restart: If True, when we reset the trust region, also reset the vae to the initial weights (weights prior to any e2e updates)
         k: We keep track of and update end to end on the top k points found during optimization
         verbose: If True, we print out updates such as best score found, number of oracle calls made, etc. 
     """
