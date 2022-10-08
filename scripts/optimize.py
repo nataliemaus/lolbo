@@ -72,7 +72,7 @@ class Optimize(object):
         self.verbose = verbose
         self.num_initialization_points = num_initialization_points
         self.e2e_freq = e2e_freq
-        self.update_e2e = update_e2e
+        self.update_e2e = update_e2e 
         self.set_seed()
         if wandb_project_name: # if project name specified
             self.wandb_project_name = wandb_project_name

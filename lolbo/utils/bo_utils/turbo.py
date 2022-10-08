@@ -61,26 +61,15 @@ def generate_batch(
     acqf="ts",  # "ei" or "ts"
     dtype=torch.float32,
     device=torch.device('cuda'),
-    absolute_bounds=None, 
 ):
-
     assert acqf in ("ts", "ei")
     assert torch.all(torch.isfinite(Y))
     if n_candidates is None: n_candidates = min(5000, max(2000, 200 * X.shape[-1]))
 
     x_center = X[Y.argmax(), :].clone()  
-    weights = torch.ones_like(x_center)
-    actual_min = torch.min(X).item() 
-    actual_max = torch.max(X).item() 
-    weights = weights * (actual_max - actual_min)
-
-    if absolute_bounds is None:
-        tr_lb = torch.clamp(x_center - weights * state.length / 2.0, actual_min, actual_max) 
-        tr_ub = torch.clamp(x_center + weights * state.length / 2.0, actual_min, actual_max) 
-    else:
-        absolute_min, absolute_max = absolute_bounds
-        tr_lb = torch.clamp(x_center - weights * state.length / 2.0, absolute_min, absolute_max) 
-        tr_ub = torch.clamp(x_center + weights * state.length / 2.0, absolute_min, absolute_max) 
+    weights = torch.ones_like(x_center)*8 # less than 4 stdevs on either side max 
+    tr_lb = x_center - weights * state.length / 2.0
+    tr_ub = x_center + weights * state.length / 2.0 
 
     if acqf == "ei":
         try:

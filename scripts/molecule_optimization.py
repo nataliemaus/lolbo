@@ -30,7 +30,6 @@ class MoleculeOptimization(Optimize):
         self.method_args['molopt'] = locals()
         del self.method_args['molopt']['self']
 
-
     def initialize_objective(self):
         # initialize molecule objective
         self.objective = MoleculeObjective(
@@ -48,7 +47,6 @@ class MoleculeOptimization(Optimize):
             )
 
         return self
-
 
     def load_train_data(self):
         ''' Load in or randomly initialize self.num_initialization_points

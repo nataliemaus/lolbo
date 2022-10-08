@@ -263,17 +263,3 @@ class LOLBOState:
             self.progress_fails_since_last_e2e += 1
             if self.verbose:
                 print("GOT NO VALID Y_NEXT TO UPDATE DATA, RERUNNING ACQUISITOIN...")
-
-
-    def reset_state(self,):
-        ''' when an optimization run gets stuck, we can 
-        sometimes continue to make progress if we 
-        reset the VAE and GP (often done after multiple TR restarts)
-        ''' 
-        # reset VAE
-        self.objective.initialize_vae()
-        # reset GP
-        self.initialize_surrogate_model()
-        # Make sure we do an e2e update next to recenter new points w/ new VAE
-        self.progress_fails_since_last_e2e = torch.inf 
-        self.k = self.k * 5
