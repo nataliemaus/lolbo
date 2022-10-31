@@ -77,7 +77,7 @@ class Optimize(object):
         if wandb_project_name: # if project name specified
             self.wandb_project_name = wandb_project_name
         else: # otherwise use defualt
-            self.wandb_project_name = f"optimimze-{self.task_id}"
+            self.wandb_project_name = f"optimize-{self.task_id}"
         if not WANDB_IMPORTED_SUCCESSFULLY:
             assert not self.track_with_wandb, "Failed to import wandb, to track with wandb, try pip install wandb"
         if self.track_with_wandb:
